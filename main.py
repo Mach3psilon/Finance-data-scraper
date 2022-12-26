@@ -10,11 +10,11 @@ import os
 import xlsxwriter
 
 
-
-#decorator function to collect time data 
-def timeit(func):
+# decorator function to collect time data
+def timeit(func) -> object:
+    """Decorator function to collect time data"""
     @wraps(func)
-    def timeit_wrapper(*args, **kwargs):
+    def timeit_wrapper(*args, **kwargs) -> object:
         start_time = time.perf_counter()
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
@@ -23,86 +23,116 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-#for xlsx sheet name
-def get_time():
+# for xlsx sheet name
+
+
+def get_time() -> time:
+    """Returns current time in format: 12-31-2022 23:59:59"""
     now = time.localtime()
     return time.strftime("%m-%d-%Y", now)
 
-#to get first day of the month
-def get_first_day_of_month():
+# to get first day of the month
+
+
+def get_first_day_of_month() -> time:
+    """Returns first day of the month in format: 01/12/2022"""
     now = time.localtime()
     return time.strftime("01/%m/%Y", now)
 
-#to get today's date
-def get_today():
+# to get today's date
+
+
+def get_today() -> time:
+    """Returns today's date in format: 31/12/2022"""
     now = time.localtime()
     return time.strftime("%d/%m/%Y", now)
 
-#to activate and adjust driver beforehand
-def activate_driver():
-    global driver
+# to activate and adjust driver beforehand
+
+
+def activate_driver() -> webdriver:
+    """Activates and adjusts driver beforehand"""
+
     chrome_options = Options()
 
-    #remove it if you want to see warnings
-    warnings.filterwarnings("ignore", category=DeprecationWarning) 
+    # remove it if you want to see warnings
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     chrome_options.add_argument('log-level=3')
-    
-    #remove it if you want to see what is going on at the background
+
+    # remove it if you want to see what is going on at the background
     chrome_options.add_argument("--headless")
-    
-    #to download files to the specified directory
-    prefs = {'download.default_directory' : str(Path.cwd())+'\Currencies'}
+
+    # to download files to the specified directory
+    prefs = {'download.default_directory': str(
+        Path.cwd())+'\Currencies\Worst_currencies'}
     chrome_options.add_experimental_option('prefs', prefs)
-    
-    driver = webdriver.Chrome('./chromedriver.exe', chrome_options=chrome_options)
-    
-def get_currency_data():
-    
+
+    driver = webdriver.Chrome('./chromedriver.exe',
+                              chrome_options=chrome_options)
+
+    return driver
+
+
+def get_currency_data(driver) -> list:
+    """Returns list of currency data"""
+
     driver.get("https://finance.yahoo.com/currencies")
     result_list = []
-    
+
     i = 0
     time.sleep(2)
+
     try:
         while True:
             i += 1
-            
+
             append_list = []
-            name = driver.find_element(By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[1]/a').text
+            name = driver.find_element(
+                By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[1]/a').text
             append_list.append(name[:-2:])
-            last_price = driver.find_element(By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[2]').text
+            last_price = driver.find_element(
+                By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[2]').text
             append_list.append(last_price)
             for j in range(3):
-                row_element = driver.find_element(By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[' + str(j + 3) + ']/fin-streamer').text
+                row_element = driver.find_element(
+                    By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[' + str(j + 3) + ']/fin-streamer').text
                 append_list.append(row_element)
-            
+
             result_list.append(append_list)
     except:
         return result_list
 
 
-
-
-def get_path():
+def get_path() -> str:
+    """Returns path of the project"""
     path = str(Path.cwd())
     print('--------------------------------------------')
-    if os.path.exists(path + '/Currencies'):
-        print("Currencies path exists")
-    else:
-        os.mkdir(path +'/Currencies')
-        print('Currencies path created')
-    return path 
 
-    
-def write_xlsx(data):
+    def adjust_path(path, extra):
+
+        if os.path.exists(path + '/' + extra):
+            print(extra + " path exists")
+        else:
+            os.mkdir(path + '/' + extra)
+        print(extra + ' path created')
+
+    adjust_path(path, 'Currencies')
+    adjust_path(path, 'Currencies/Currency_xlsx')
+    adjust_path(path, 'Currencies/Worst_currencies')
+
+    return path
+
+
+def write_xlsx(data) -> None:
+    """Writes data to xlsx file"""
     path = get_path()
-    workbook = xlsxwriter.Workbook(path + '/Currencies/Currencies.xlsx')
+    workbook = xlsxwriter.Workbook(
+        path + '/Currencies/Currency_xlsx/Currencies.xlsx')
     worksheet = workbook.add_worksheet(str(get_time()))
-    
 
-    #three color shift in xlsx writer wasn't working properly so I had to do it manually
+    # three color shift in xlsx writer wasn't working properly so I had to do it manually
     data_val = data[0][4]
-    
+
     max = float(data_val.replace('%', ''))
     min = float(data_val.replace('%', ''))
     for i in range(len(data)):
@@ -111,13 +141,13 @@ def write_xlsx(data):
             max = float(data_val.replace('%', ''))
         elif float(data_val.replace('%', '')) < min:
             min = float(data_val.replace('%', ''))
-    
+
     gap = max - min
-   
-    def format(x, gap):
-        
+
+    def format(x, gap) -> float:
+
         return float(str((1 / gap) * x)[0:5])
-    
+
     cell_format_yellow = workbook.add_format({'align': 'right'})
     cell_format_yellow.set_bg_color('#F1EB9C')
     cell_format_green = workbook.add_format({'align': 'right'})
@@ -128,10 +158,7 @@ def write_xlsx(data):
     cell_format_red_bright.set_bg_color('#FF5733')
     cell_format_green_bright = workbook.add_format({'align': 'right'})
     cell_format_green_bright.set_bg_color('#006400')
-    #----------------------------------------------------------------------------------
-    
-    
-    
+    # ----------------------------------------------------------------------------------
 
     bold = workbook.add_format({'bold': True})
     align_right = workbook.add_format({'align': 'right'})
@@ -149,27 +176,20 @@ def write_xlsx(data):
                 formatted_data = formatted_data.replace('%', '')
                 formatted_data = float(formatted_data.replace('+', ''))
                 formatted_data = format(formatted_data, gap)
-                
-                
+
                 if formatted_data == 0:
                     worksheet.write(i + 1, j, data[i][j], cell_format_yellow)
                 elif formatted_data > 0.5:
-                    worksheet.write(i + 1, j, data[i][j], cell_format_green_bright)
+                    worksheet.write(
+                        i + 1, j, data[i][j], cell_format_green_bright)
                 elif 0 < formatted_data < 0.5:
                     worksheet.write(i + 1, j, data[i][j], cell_format_green)
                 elif -0.5 < formatted_data < 0:
                     worksheet.write(i + 1, j, data[i][j], cell_format_red)
                 elif formatted_data < -0.5:
-                    worksheet.write(i + 1, j, data[i][j], cell_format_red_bright)
+                    worksheet.write(
+                        i + 1, j, data[i][j], cell_format_red_bright)
 
-                
-                
-
-                
-                
-                
-                
-                
             elif 4 > j > 1:
                 worksheet.write(i + 1, j, data[i][j], align_right)
             else:
@@ -179,57 +199,69 @@ def write_xlsx(data):
     workbook.close()
 
 
-
-def download_top_five_currencies():
+def download_top_currencies(driver, currency_limit=5) -> None:
+    """Downloads top 5 currencies"""
     print('--------------------------------------------')
     print('Downloading currencies...')
-    def download_currency(index):
+
+    def download_currency(driver, index) -> None:
         driver.get("https://finance.yahoo.com/currencies")
-        driver.find_element(By.XPATH, '//*[@id="list-res-table"]/div[1]/table/thead/tr/th[5]').click()
+        driver.find_element(
+            By.XPATH, '//*[@id="list-res-table"]/div[1]/table/thead/tr/th[5]').click()
         time.sleep(2)
-        driver.find_element(By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + index + ']/td[1]/a').click()
+        driver.find_element(
+            By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + index + ']/td[1]/a').click()
         time.sleep(2)
 
-        #to supress pop-up
+        # to supress pop-up
         try:
-            driver.find_element(By.XPATH, '//*[@id="myLightboxContainer"]/section/button[1]').click()
-        except: 
+            driver.find_element(
+                By.XPATH, '//*[@id="myLightboxContainer"]/section/button[1]').click()
+        except:
             pass
         time.sleep(2)
-        driver.find_element(By.XPATH, '//*[@id="quote-nav"]/ul/li[4]/a').click()
+        driver.find_element(
+            By.XPATH, '//*[@id="quote-nav"]/ul/li[4]/a').click()
         time.sleep(2)
-        driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/div[1]/div/div/div').click()
-        start_date = driver.find_element(By.XPATH, '//*[@id="dropdown-menu"]/div/div[1]/input')
+        driver.find_element(
+            By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/div[1]/div/div/div').click()
+        start_date = driver.find_element(
+            By.XPATH, '//*[@id="dropdown-menu"]/div/div[1]/input')
         start_date.send_keys(get_first_day_of_month())
-        end_date = driver.find_element(By.XPATH, '//*[@id="dropdown-menu"]/div/div[2]/input')
+        end_date = driver.find_element(
+            By.XPATH, '//*[@id="dropdown-menu"]/div/div[2]/input')
         end_date.send_keys(get_today())
-        driver.find_element(By.XPATH, '//*[@id="dropdown-menu"]/div/div[3]/button[1]').click()
-        
-        driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/button').click()
-        driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[2]/span[2]/a').click()
+        driver.find_element(
+            By.XPATH, '//*[@id="dropdown-menu"]/div/div[3]/button[1]').click()
+
+        driver.find_element(
+            By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/button').click()
+        driver.find_element(
+            By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[2]/span[2]/a').click()
         time.sleep(2)
 
-    #change it to see more currencies.
-    currency_range = 5
+    # change it to see more currencies.
+    currency_range = currency_limit
     for i in range(currency_range):
-        #Changing to url twice because of some weird bug that the site has.
+        # Changing to url twice because of some weird bug that the site has.
         driver.get("https://finance.yahoo.com/currencies")
-        download_currency(str(i + 1))
-        print('Currency ' + str(i + 1) + '/' + str(currency_range) + ' downloaded')
-    
-    
-    
+        download_currency(driver, str(i + 1))
+        print('Currency ' + str(i + 1) + '/' +
+              str(currency_range) + ' downloaded')
+
+
 @timeit
-def main():
+def main() -> None:
+    """ Performs main operations. """
     print('--------------------------------------------')
     print('Starting program')
-    activate_driver()
-    write_xlsx(get_currency_data())
-    download_top_five_currencies()
+    driver = activate_driver()
+    currency_data = get_currency_data(driver)
+    write_xlsx(currency_data)
+    # adjust currency limit to see more currencies
+    download_top_currencies(driver, currency_limit=5)
     driver.close()
+
 
 if __name__ == "__main__":
     main()
-    
-    
-    
