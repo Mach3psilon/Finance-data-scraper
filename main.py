@@ -111,9 +111,16 @@ def get_currency_data(driver) -> list:
 def get_path() -> str:
     """Returns path of the project"""
     path = str(Path.cwd())
-    print('--------------------------------------------')
 
-    def adjust_path(path, extra):
+    return path
+
+
+def adjust_paths() -> None:
+    """Adjusts paths of the files"""
+    path = get_path()
+
+    def adjust_path(path, extra) -> None:
+        """Adjusts path of the files"""
 
         if os.path.exists(path + '/' + extra):
             print(extra + " path exists")
@@ -124,8 +131,6 @@ def get_path() -> str:
     adjust_path(path, 'Currencies')
     adjust_path(path, 'Currencies/Currency_xlsx')
     adjust_path(path, 'Currencies/Worst_currencies')
-
-    return path
 
 
 def write_xlsx(data) -> None:
@@ -262,6 +267,7 @@ def main() -> None:
     print('Starting program')
     driver = activate_driver()
     currency_data = get_currency_data(driver)
+    adjust_paths()
     write_xlsx(currency_data)
     # adjust currency limit to see more currencies
     download_top_currencies(driver, currency_limit=5)
