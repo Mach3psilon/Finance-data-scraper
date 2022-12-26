@@ -81,14 +81,18 @@ def get_currency_data(driver) -> list:
 
     i = 0
     time.sleep(2)
+    last_element = driver.find_element(
+        By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[last()]/td[1]/a')
 
     try:
-        while True:
+        flag = 1
+        while flag:
             i += 1
 
             append_list = []
             name = driver.find_element(
                 By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[1]/a').text
+            flag = (last_element != name)
             append_list.append(name[:-2:])
             last_price = driver.find_element(
                 By.XPATH, '//*[@id="list-res-table"]/div[1]/table/tbody/tr[' + str(i) + ']/td[2]').text
@@ -99,6 +103,7 @@ def get_currency_data(driver) -> list:
                 append_list.append(row_element)
 
             result_list.append(append_list)
+        return result_list
     except:
         return result_list
 
